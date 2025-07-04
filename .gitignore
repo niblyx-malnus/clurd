@@ -1,5 +1,12 @@
 # Configuration with credentials
 config.json
+!config.example.json
+
+# Daemon runtime files
+.dojo_daemon/
+.dojo_command
+.dojo_output
+.last_dojo_output
 
 # Python
 __pycache__/

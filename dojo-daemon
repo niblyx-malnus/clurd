@@ -1,0 +1,23 @@
+#!/usr/bin/env python3
+"""
+dojo-daemon - Simple CLI wrapper for the Dojo Daemon
+
+Usage:
+    ./dojo-daemon start           # Start the daemon
+    ./dojo-daemon stop            # Stop the daemon
+    ./dojo-daemon status          # Check daemon status
+    ./dojo-daemon send "command"  # Send a command
+    ./dojo-daemon output          # Get current output
+    ./dojo-daemon watch           # Watch output live
+"""
+
+import sys
+import os
+
+# Add current directory to path
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from dojo_daemon import main
+
+if __name__ == '__main__':
+    main()

@@ -18,9 +18,43 @@ A powerful Python client for interacting with Urbit's dojo terminal that provide
 4. **Real-time Stream Processing**: Captures both terminal output and slog (system log)
    messages during specified time windows, providing complete interaction visibility.
 
+5. **Daemon-Compatible Design**: Works with persistent daemon processes that maintain
+   connections and capture all events continuously, eliminating timing guesswork.
+
 Key Innovation: Instead of trying to parse text streams, we simulate the actual terminal
 that Urbit communicates with, giving us pixel-perfect output formatting and the ability
 to detect real-time parser feedback through bell events.
+
+## Timing Strategy Evolution
+
+**Old Approach (run() method):**
+- Fixed timeout windows (DEFAULT_REQUEST_TIMEOUT = 10 seconds)
+- Guess appropriate timeout for each command type
+- Risk of missing delayed output or slog messages
+- Each connection is temporary
+
+**New Approach (daemon + run_async()):**
+- Persistent connection maintained by daemon
+- Send command and check back later as needed
+- All events captured continuously in background
+- No more timing guesswork - just check when convenient
+
+**Migration Guide:**
+```python
+# Old way - timing guesswork
+result = dojo.run("complex-command", timeout=30)  # Hope 30s is enough
+
+# New way - daemon approach
+./dojo-daemon start
+./dojo-daemon send "complex-command"
+# ... do other work ...
+./dojo-daemon output  # Check whenever ready
+
+# New way - programmatic
+dojo.run_async("complex-command")  # Returns immediately
+# ... do other work ...
+# Check daemon output when ready
+```
 
 Usage:
     # Simple command execution (automatically adds \r to submit)
@@ -652,13 +686,43 @@ class UrbitDojo:
         
         return results
     
+    def run_async(self, command: str, initial_wait: float = 2.0) -> Dict:
+        """
+        Run a command and return immediately with minimal wait.
+        
+        This method is designed for use with persistent daemon connections where
+        you can check back later for complete output. It sends the command and
+        waits briefly for initial response, then returns allowing you to check
+        the full output later.
+        
+        Args:
+            command: Hoon expression to evaluate
+            initial_wait: Brief wait for immediate response (default 2 seconds)
+            
+        Returns:
+            Dict with initial results and timing info
+        """
+        chars = list(command) + ['\r']
+        start_time = time.time()
+        
+        result = self.send_and_listen(chars, initial_wait)
+        
+        return {
+            'command': command,
+            'start_time': start_time,
+            'initial_output': self._extract_output(result.terminal_events),
+            'chars_sent': result.chars_sent,
+            'total_chars': len(chars),
+            'complete': result.chars_sent == len(chars),
+            'slog_messages': result.slog_messages
+        }
+    
     def run(self, command: str, timeout: float = DEFAULT_REQUEST_TIMEOUT) -> DojoResponse:
         """
         Run a command in Urbit's dojo and return the result.
         
-        This is a convenience wrapper around send_and_listen() for backward compatibility.
-        For commands with unpredictable timing, use send_and_listen() directly with an
-        appropriate listen_duration.
+        DEPRECATED: For new code, prefer using the daemon approach or run_async().
+        This method waits for a fixed timeout which may miss delayed output.
         
         Args:
             command: Hoon expression to evaluate

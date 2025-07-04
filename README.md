@@ -1,28 +1,31 @@
 # Urbit Dojo Client - Advanced Terminal Interface
 
-A powerful Python client for interacting with Urbit's dojo terminal, featuring revolutionary syntax analysis capabilities and pixel-perfect output formatting.
+A powerful Python client for interacting with Urbit's dojo terminal, featuring a **persistent daemon** for reliable command execution and comprehensive syntax analysis capabilities.
 
 This tool is part of the **clurd project** (Claude + Urbit) - an initiative to give Claude mastery over Urbit by providing:
-- Access to foundational Urbit repositories and documentation
-- Dynamic interaction with running Urbit ships  
-- Iterative knowledge distillation through systematic exploration
-- Tools for computational archaeology of Urbit's unique paradigm
+- **Persistent daemon connection** - Never miss delayed output or slog messages
+- **Dynamic interaction** with running Urbit ships without timing guesswork  
+- **Syntax analysis capabilities** - Bell detection, tab completion, command validation
+- **Tools for computational archaeology** of Urbit's unique paradigm
 
 The dojo client serves as Claude's primary instrument for probing and understanding Urbit's behavior in real-time.
 
 ## 🚀 Key Features
 
-### 1. **Terminal Buffer Simulation**
+### 1. **Persistent Daemon Connection** ⭐ NEW
+Long-running background process that maintains connection to your Urbit ship, capturing ALL events continuously. No more timing guesswork or missed output!
+
+### 2. **Terminal Buffer Simulation**
 Faithfully reproduces webterm's visual output by implementing Urbit's blit (terminal command) protocol including cursor positioning, line clearing, and text rendering.
 
-### 2. **Bell Detection & Syntax Analysis** 
+### 3. **Bell Detection & Syntax Analysis** 
 Revolutionary capability to detect when Urbit rejects input (bell events) and pinpoint exactly where parsing fails. Perfect for exploring Urbit's syntax rules.
 
-### 3. **Tab Completion Extraction**
+### 4. **Tab Completion Extraction**
 Clean extraction of completion suggestions and function signatures from Urbit's interactive help system.
 
-### 4. **Real-time Stream Processing** 
-Captures both terminal output and slog (system log) messages during specified time windows.
+### 5. **Smart Output Cleaning**
+Automatically removes duplicate prompts and formats output for better readability.
 
 ## 📁 Recommended Directory Structure
 
@@ -49,63 +52,133 @@ your-workspace/             # Your main workspace directory
 
 ## Quick Start
 
-1. **Set up the workspace:**
-   ```bash
-   mkdir your-workspace && cd your-workspace
-   git clone https://github.com/urbit/docs.urbit.org
-   git clone https://github.com/urbit/urbit
-   mkdir ships
-   git clone [this-repo] clurd
-   ```
+### 1. **Set up the workspace:**
+```bash
+mkdir your-workspace && cd your-workspace
+git clone https://github.com/urbit/docs.urbit.org
+git clone https://github.com/urbit/urbit
+mkdir ships
+git clone [this-repo] clurd
+```
 
-2. **Install dependencies:**
-   ```bash
-   cd clurd
-   pip install -r requirements.txt
-   ```
+### 2. **Install dependencies:**
+```bash
+cd clurd
+pip install -r requirements.txt
+```
 
-3. **Configure your ship:**
-   ```bash
-   cp config.example.json config.json
-   # Edit config.json with your ship details
-   ```
+### 3. **Configure your ship:**
+```bash
+cp config.example.json config.json
+# Edit config.json with your ship details
+```
 
-4. **Run commands:**
-   ```bash
-   ./dojo "(add 5 4)\r"      # Execute: returns "9"
-   ./dojo "+he\t"            # Tab completion: shows "+hello", "+help"
-   ./dojo "now\r"            # Current time
-   ```
+**Getting your access code:**
+1. In your ship's dojo: `+code`
+2. Copy the result (like `ridlur-figbud-capmut-bidrup`)
+
+**Example config.json:**
+```json
+{
+  "ship_url": "http://localhost:80",
+  "ship_name": "sampel-palnet", 
+  "access_code": "ridlur-figbud-capmut-bidrup"
+}
+```
+
+### 4. **Start the daemon:** ⭐ RECOMMENDED
+```bash
+./dojo-daemon start           # Start persistent connection
+./dojo-daemon status          # Check if running
+```
+
+### 5. **Send commands:**
+```bash
+./dojo-daemon send "(add 5 4)"     # Basic arithmetic
+./dojo-daemon send "+vats"          # System info
+./dojo-daemon send "|mass"          # Memory usage
+```
+
+### 6. **Check output:**
+```bash
+./dojo-daemon output          # Get current state
+./dojo-daemon watch           # Watch live (Ctrl+C to stop)
+```
+
+### 7. **When done:**
+```bash
+./dojo-daemon stop            # Clean shutdown
+```
+
+## 🎯 Why Use the Daemon?
+
+**Before (old approach):**
+```python
+# Had to guess timeouts - risky!
+result = dojo.run("complex-command", timeout=30)  # Hope 30s is enough...
+```
+
+**After (daemon approach):**
+```bash
+# Send and check back whenever convenient - no timing guesswork!
+./dojo-daemon send "complex-command"
+# ... do other work ...
+./dojo-daemon output  # Check when ready
+```
+
+**Benefits:**
+- ✅ **Never miss output** - Daemon captures everything continuously
+- ✅ **No timing guesswork** - Commands can take as long as needed
+- ✅ **Background operation** - Send commands and check back later
+- ✅ **Persistent connection** - Avoids reconnection overhead
+- ✅ **Clean output** - Automatic prompt cleaning and formatting
+- ✅ **Complete event log** - All interactions saved in `.dojo_daemon/events.jsonl`
 
 ## 💡 Advanced Usage
 
-### Bell-Aware Syntax Probing
+### Working with Long-Running Commands
 ```bash
-# Test where Urbit's number parser fails
-python3 -c "
-from urbit_dojo import UrbitDojo, load_config
-dojo = UrbitDojo(**load_config())
-dojo.connect()
-result = dojo.send_until_bell(['1','0','0','0','0','0','0','0'])
-print(f'Accepted: {result.chars_accepted} chars') # 3
-print(f'Rejected: {result.chars_rejected}')       # ['0','0','0','0','0'] 
-print(f'Terminal: {result.terminal_state}')       # '100'
-"
+# Send a command that might take time
+./dojo-daemon send "|pack"           # Memory defragmentation
+
+# Continue with other work...
+./dojo-daemon send "(add 1 2)"       # Quick command works fine
+
+# Check back for pack results when convenient
+./dojo-daemon output                 # See current state
 ```
 
-### Tab Completion Extraction
+### Daemon Status and Monitoring
+```bash
+./dojo-daemon status                 # Connection health, uptime, event count
+cat .dojo_daemon/events.jsonl       # Full event history
+cat .dojo_daemon/daemon.log         # Daemon logs for debugging
+```
+
+### Legacy Library Usage (Advanced Users)
+
+For direct Python integration, the underlying library supports advanced features:
+
+#### Bell-Aware Syntax Probing
 ```python
 from urbit_dojo import UrbitDojo, load_config
 
 dojo = UrbitDojo(**load_config())
 dojo.connect()
+result = dojo.send_until_bell(['1','0','0','0','0','0','0','0'])
+print(f'Accepted: {result.chars_accepted} chars')  # 3
+print(f'Rejected: {result.chars_rejected}')        # ['0','0','0','0','0'] 
+print(f'Terminal: {result.terminal_state}')        # '100'
+```
+
+#### Tab Completion Extraction
+```python
 completions = dojo.get_completions("+he")
 print(completions)  # ['+hello', '+help']
 ```
 
-### Command Validation
+#### Command Validation
 ```python
-# Test syntax without execution
 validation = dojo.validate_command("(add 5 )")
 print(validation['is_valid'])          # False
 print(validation['accepted_portion'])  # "(add 5 "
@@ -113,14 +186,7 @@ print(validation['rejected_portion'])  # ")"
 print(validation['error_position'])    # 7
 ```
 
-### Syntax Exploration
-```python
-# Systematically test what characters Urbit accepts
-results = dojo.explore_syntax("100", ['.', ' ', '0', ')'])
-for char, result in results.items():
-    status = '✓' if result['accepted'] else '✗'
-    print(f"{status} 100{repr(char)}")
-```
+**Note:** For most use cases, the daemon approach is recommended over direct library usage.
 
 ## 🎯 Use Cases
 
@@ -141,7 +207,7 @@ for char, result in results.items():
 
 ## Configuration
 
-Create a `config.json` file:
+The daemon uses the same configuration as the library. Create a `config.json` file:
 
 ```json
 {
@@ -151,10 +217,6 @@ Create a `config.json` file:
 }
 ```
 
-**Getting your access code:**
-1. In your ship's dojo: `+code`
-2. Copy the result (like `ridlur-figbud-capmut-bidrup`)
-
 **Alternative: Environment variables:**
 ```bash
 export URBIT_URL="http://localhost:80"
@@ -162,28 +224,25 @@ export URBIT_SHIP="your-ship-name"
 export URBIT_CODE="your-access-code"
 ```
 
-## ⏱️ Timing Considerations
+## 🔧 Troubleshooting
 
-**IMPORTANT**: clurd captures output during a time window. Choose your timeout based on the expected command behavior:
-
-```python
-# Fast arithmetic - 1-2 seconds
-dojo.send_and_listen(['(add 5 4)\r'], listen_duration=2.0)
-
-# Tab completion - 2-3 seconds  
-dojo.send_and_listen(['+he\t'], listen_duration=3.0)
-
-# File operations - 5-10 seconds
-dojo.send_and_listen(['|commit %base\r'], listen_duration=10.0)
-
-# Network operations - 10-30 seconds
-dojo.send_and_listen(['+bitcoin|btc-wallet\r'], listen_duration=30.0)
-
-# Long computations - adjust as needed
-dojo.send_and_listen(['(some-complex-computation)\r'], listen_duration=60.0)
+### Daemon Won't Start
+```bash
+./dojo-daemon status               # Check if already running
+cat .dojo_daemon/daemon.log       # Check error logs
 ```
 
-If output arrives after the window closes, it will be missed. When in doubt, use a longer timeout - you'll just wait a bit longer for the result.
+### Connection Issues
+- Ensure your Urbit ship is running
+- Verify ship URL (usually `http://localhost:80`)
+- Check access code with `+code` in your ship's dojo
+- Restart daemon: `./dojo-daemon stop && ./dojo-daemon start`
+
+### Missing Output
+With the daemon, you shouldn't miss output! But if you do:
+- Check `./dojo-daemon status` for connection health
+- View full event log: `cat .dojo_daemon/events.jsonl`
+- Ensure daemon is running during command execution
 
 ## 🔬 Technical Innovation
 
@@ -205,58 +264,68 @@ The terminal simulation faithfully implements Urbit's blit protocol:
 
 ## Examples
 
-### Basic Commands
+### Basic Daemon Usage
 ```bash
-./dojo "(add 10 5)\r"       # 15
-./dojo "(mul 3 4)\r"        # 12  
-./dojo "(lent ~[1 2 3])\r"  # 3
-./dojo "our\r"              # Your ship name
+# Start daemon
+./dojo-daemon start
+
+# Basic commands
+./dojo-daemon send "(add 10 5)"        # Arithmetic
+./dojo-daemon send "(mul 3 4)"         # More arithmetic  
+./dojo-daemon send "(lent ~[1 2 3])"   # List operations
+./dojo-daemon send "our"               # Ship name
+
+# System commands
+./dojo-daemon send "+vats"             # Desk information
+./dojo-daemon send "+code"             # Access code
+./dojo-daemon send "|mass"             # Memory usage
+
+# Check output anytime
+./dojo-daemon output
 ```
 
-### Tab Completion
+### Working with Claude
+The daemon is perfect for Claude interactions:
+
 ```bash
-./dojo "+he\t"              # Shows +hello, +help suggestions
-./dojo "ad\t\t"             # Shows add function signature
+# Send a command
+./dojo-daemon send "+ls /===/gen"
+
+# Claude can do other work, then check back:
+./dojo-daemon output
+
+# Send follow-up based on results
+./dojo-daemon send "+cat /===/gen/hello/hoon"
 ```
 
-### Multi-line Input
+### Complete Workflow Example
 ```bash
-./dojo "(add\n5 4)\r"       # Multi-line expression
+# 1. Start daemon
+./dojo-daemon start
+
+# 2. Explore your ship
+./dojo-daemon send "+vats"           # See what desks you have
+./dojo-daemon output                 # Check results
+
+# 3. Look at files
+./dojo-daemon send "+ls %"           # List current directory
+./dojo-daemon send "+tree % 2"       # Tree view with depth 2
+
+# 4. Check system health
+./dojo-daemon send "|mass"           # Memory usage
+./dojo-daemon send "+trouble"        # Any problems?
+
+# 5. When done
+./dojo-daemon stop
 ```
 
-### Special Characters
-- `\t` - Tab (triggers completion)
-- `\r` - Carriage return (executes command)
-- `\n` - Newline (multi-line input)
-- `\b` - Backspace
+### Special Characters in Commands
+```bash
+# Tab completion (use \t)
+./dojo-daemon send "+he\t"           # Shows completions
 
-## Library Usage
-
-### Simple Commands
-```python
-from urbit_dojo import UrbitDojo
-
-dojo = UrbitDojo("http://localhost:80", "ship-name", "access-code")
-if dojo.connect():
-    result = dojo.run("(add 5 4)")
-    print(result.output)  # "9"
-```
-
-### Advanced Analysis
-```python
-# Bell detection
-bell_result = dojo.send_until_bell(['(', 'a', 'd', 'd', ' ', '5', ' ', ')'])
-print(f"Accepted: {bell_result.chars_accepted} chars")
-print(f"Error at: {bell_result.bell_position}")
-
-# Completion extraction  
-completions = dojo.get_completions("+")
-print(f"Available generators: {completions}")
-
-# Command validation
-validation = dojo.validate_command("malformed expression")
-if not validation['is_valid']:
-    print(f"Syntax error at position {validation['error_position']}")
+# Multi-line input (use \n)  
+./dojo-daemon send "(add\n5 4)"      # Multi-line expression
 ```
 
 ## Requirements
@@ -269,8 +338,19 @@ if not validation['is_valid']:
 
 clurd represents a new paradigm for interacting with computational systems - instead of guessing at behavior, we probe systematically and learn the exact rules. This approach could be applied to any system with real-time feedback mechanisms.
 
+## Files Overview
+
+- `./dojo-daemon` - Main executable for daemon control
+- `dojo_daemon.py` - Daemon implementation  
+- `urbit_dojo.py` - Core library with terminal simulation
+- `config.json` - Your ship configuration (create from config.example.json)
+- `dojo-commands-reference.md` - Comprehensive command reference
+- `.dojo_daemon/` - Runtime files (events, output, logs)
+
 ## Philosophy
 
 We're not just building tools, we're developing **computational archaeology** - methods for understanding alien computational paradigms through systematic exploration and real-time feedback analysis.
+
+The daemon approach eliminates the traditional "request-response with timeout" pattern, replacing it with "continuous observation" - much like how an archaeologist doesn't rush to conclusions but carefully observes and records everything over time.
 
 Urbit becomes not just a platform to use, but an instrument for studying fundamentally different approaches to computation.

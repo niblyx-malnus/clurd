@@ -1,0 +1,35 @@
+#!/usr/bin/env python3
+"""
+dojo - Simple CLI for running Urbit dojo commands
+
+Usage:
+    ./dojo "(add 5 4)"
+    ./dojo "now"
+    ./dojo "+hello 'world'"
+"""
+
+import sys
+import os
+
+# Add current directory to path so we can import urbit_dojo
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from urbit_dojo import quick_run
+
+
+def main():
+    if len(sys.argv) != 2:
+        print("Usage: ./dojo \"<command>\"")
+        print("Examples:")
+        print("  ./dojo \"(add 5 4)\"")
+        print("  ./dojo \"now\"")
+        print("  ./dojo \"+hello 'world'\"")
+        sys.exit(1)
+    
+    command = sys.argv[1]
+    result = quick_run(command)
+    print(result)
+
+
+if __name__ == "__main__":
+    main()

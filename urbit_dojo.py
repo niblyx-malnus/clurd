@@ -415,8 +415,8 @@ class UrbitDojo:
         
         try:
             # Clear current line first
-            self._send_clear_line()
-            time.sleep(0.2)
+            # self._send_clear_line()  # DISABLED: Causes command truncation at ~15 chars
+            # time.sleep(0.2)
             
             # Send each character in the sequence
             id_counter = 100
@@ -507,8 +507,8 @@ class UrbitDojo:
         time.sleep(DEFAULT_STREAM_START_DELAY)
         
         # Clear current line first
-        self._send_clear_line()
-        time.sleep(DEFAULT_CLEAR_LINE_DELAY)
+        # self._send_clear_line()  # DISABLED: Causes command truncation at ~15 chars
+        # time.sleep(DEFAULT_CLEAR_LINE_DELAY)
         
         # Send characters one by one until bell
         chars_accepted = 0

@@ -1,0 +1,11 @@
+{
+  "status": "stopped",
+  "pid": 30470,
+  "connected": false,
+  "uptime": 143627.68812179565,
+  "total_events": 0,
+  "last_update": 1752517890.372614,
+  "ship": null,
+  "reconnect_attempts": 0,
+  "last_command_time": 1752426576.142132
+}

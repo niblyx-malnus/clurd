@@ -928,7 +928,7 @@ def parse_command_string(cmd_str: str) -> List[str]:
     return chars
 
 
-def quick_run(command: str) -> str:
+def quick_run(command: str, timeout: float = None) -> str:
     """
     Quick function to run a single command
     
@@ -952,12 +952,13 @@ def quick_run(command: str) -> str:
     # Parse command string for escape sequences
     chars = parse_command_string(command)
     
-    # Only add enter if the command doesn't already end with newline
-    if not chars or chars[-1] != '\n':
-        chars.append('\n')
+    # Only add enter if the command doesn't already end with carriage return
+    if not chars or chars[-1] != '\r':
+        chars.append('\r')
     
     # Use send_and_listen for complete character stream processing  
-    result = dojo.send_and_listen(chars)
+    listen_timeout = timeout if timeout is not None else DEFAULT_LISTEN_DURATION
+    result = dojo.send_and_listen(chars, listen_timeout)
     
     # Extract text from the captured events
     terminal_output = dojo._extract_output(result.terminal_events)

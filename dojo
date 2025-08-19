@@ -18,16 +18,18 @@ from urbit_dojo import quick_run
 
 
 def main():
-    if len(sys.argv) != 2:
-        print("Usage: ./dojo \"<command>\"")
+    if len(sys.argv) < 2 or len(sys.argv) > 3:
+        print("Usage: ./dojo \"<command>\" [timeout]")
         print("Examples:")
         print("  ./dojo \"(add 5 4)\"")
         print("  ./dojo \"now\"")
         print("  ./dojo \"+hello 'world'\"")
+        print("  ./dojo \"|commit %spv-test\" 60")
         sys.exit(1)
     
     command = sys.argv[1]
-    result = quick_run(command)
+    timeout = float(sys.argv[2]) if len(sys.argv) == 3 else None
+    result = quick_run(command, timeout)
     print(result)
 
 

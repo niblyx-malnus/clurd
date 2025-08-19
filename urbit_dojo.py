@@ -1,16 +1,16 @@
 #!/usr/bin/env python3
 """
-urbit_dojo.py - Advanced Urbit Dojo Client
+urbit_dojo.py - Urbit Dojo Client
 
-A powerful Python client for interacting with Urbit's dojo terminal that provides:
+A Python client for interacting with Urbit's dojo terminal that provides:
 
 1. **Terminal Buffer Simulation**: Faithfully reproduces webterm's visual output by
    implementing Urbit's blit (terminal command) protocol including cursor positioning,
    line clearing, and text rendering.
 
-2. **Bell Detection & Syntax Analysis**: Revolutionary capability to detect when Urbit
-   rejects input (bell events) and pinpoint exactly where parsing fails. Enables
-   systematic exploration of Urbit's syntax rules.
+2. **Bell Detection & Syntax Analysis**: Detects when Urbit rejects input (bell events) 
+   and pinpoints exactly where parsing fails. Enables systematic exploration of 
+   Urbit's syntax rules.
 
 3. **Tab Completion Extraction**: Clean extraction of completion suggestions and
    function signatures from Urbit's interactive help system.
@@ -18,7 +18,7 @@ A powerful Python client for interacting with Urbit's dojo terminal that provide
 4. **Real-time Stream Processing**: Captures both terminal output and slog (system log)
    messages during specified time windows, providing complete interaction visibility.
 
-Key Innovation: Instead of trying to parse text streams, we simulate the actual terminal
+Key Approach: Instead of trying to parse text streams, we simulate the actual terminal
 that Urbit communicates with, giving us pixel-perfect output formatting and the ability
 to detect real-time parser feedback through bell events.
 
@@ -30,7 +30,7 @@ Usage:
     # Manual character-by-character input (requires \r to submit)
     result = dojo.send_and_listen(['(', 'a', 'd', 'd', ' ', '5', ' ', '4', ')', '\r'])
     
-    # Bell-aware syntax probing  
+    # Syntax probing with bell detection
     result = dojo.send_until_bell(['1','0','0','0'])  # Stops when rejected
     
     # Tab completion extraction
@@ -99,9 +99,9 @@ class TerminalBuffer:
     """
     Terminal buffer that simulates Urbit's blit (terminal command) protocol.
     
-    This is the key innovation that enables clean output formatting. Instead of trying
-    to parse text streams, we faithfully implement the terminal commands that Urbit
-    sends, giving us pixel-perfect reproduction of what appears in webterm.
+    This enables clean output formatting. Instead of trying to parse text streams, 
+    we faithfully implement the terminal commands that Urbit sends, giving us 
+    pixel-perfect reproduction of what appears in webterm.
     
     Supported Blit Commands:
     - put: Write text at cursor position
@@ -204,7 +204,7 @@ class TerminalBuffer:
 
 class UrbitDojo:
     """
-    Advanced interface to Urbit's dojo terminal with syntax analysis capabilities.
+    Interface to Urbit's dojo terminal with syntax analysis capabilities.
     
     Provides multiple interaction modes:
     
@@ -453,9 +453,9 @@ class UrbitDojo:
         """
         Send characters one by one until a bell (rejection) occurs.
         
-        This is the revolutionary syntax analysis feature. Urbit sends bell events
-        when it rejects input, allowing us to probe exactly where parsing fails.
-        Perfect for understanding Urbit's syntax rules and parser behavior.
+        This enables syntax analysis. Urbit sends bell events when it rejects input,
+        allowing us to probe exactly where parsing fails. Useful for understanding 
+        Urbit's syntax rules and parser behavior.
         
         Example:
             # Test invalid number syntax
@@ -796,9 +796,9 @@ class UrbitDojo:
         """
         Simulate terminal output by processing blit commands.
         
-        This is the core innovation: instead of trying to parse text streams,
-        we faithfully execute Urbit's terminal commands on a virtual terminal
-        buffer, giving us pixel-perfect output formatting.
+        Core approach: instead of trying to parse text streams, we faithfully 
+        execute Urbit's terminal commands on a virtual terminal buffer, giving 
+        us pixel-perfect output formatting.
         """
         terminal = TerminalBuffer()
         

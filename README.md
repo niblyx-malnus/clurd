@@ -74,4 +74,4 @@ result = quick_run("|commit %base", 30)  # With timeout
 
 ## Philosophy
 
-clurd enables **computational archaeology** - systematic exploration of Urbit's computational paradigm through real-time interaction and feedback analysis.
+clurd enables systematic exploration of Urbit's computational paradigm through real-time interaction and feedback analysis.

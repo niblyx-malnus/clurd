@@ -828,6 +828,31 @@ class UrbitDojo:
         
         return belts
     
+    def _is_at_clean_prompt(self) -> bool:
+        """Check if we're currently at a clean dojo prompt"""
+        if not self.cookies or not self.channel_id:
+            return False
+        
+        # Capture current terminal state without sending anything
+        result = self.send_and_listen([], 0.1)  # Just listen briefly
+        current_output = self._extract_output(result.terminal_events)
+        
+        # Check if the last line looks like a clean prompt
+        lines = current_output.strip().split('\n')
+        if lines:
+            last_line = lines[-1].strip()
+            # Check if it's a clean prompt: ~ship:dojo> with no command characters after >
+            prompt_parts = last_line.split(':dojo>')
+            
+            has_command_chars = any(char in prompt_parts[0] for char in '()[]{}+*/%=<>|&')
+            
+            is_clean = (len(prompt_parts) == 2 and  # Splits into exactly 2 parts
+                       prompt_parts[0].startswith('~') and  # Ship name starts with ~
+                       prompt_parts[1] == '' and  # Nothing after >
+                       not has_command_chars)  # No command chars in ship name
+            return is_clean
+        return False
+    
     def send_command_batched(self, command: str, listen_duration: float = DEFAULT_LISTEN_DURATION) -> StreamCapture:
         """
         Send command using webterm's batching approach for improved performance.
@@ -1140,9 +1165,10 @@ def quick_run_batched(command: str, timeout: float = None) -> str:
     if not dojo.connect():
         return "Error: Could not connect to Urbit ship"
     
-    # Clear the dojo first - use batched approach for this too
-    clear_command = '\x05\x15'  # Ctrl+E then Ctrl+U
-    dojo.send_command_batched(clear_command, 0.5)
+    # Only clear if we're not at a clean prompt to avoid unnecessary bell
+    if not dojo._is_at_clean_prompt():
+        clear_command = '\x05\x15'  # Ctrl+E then Ctrl+U
+        dojo.send_command_batched(clear_command, 0.5)
     
     # Add enter if not present
     if not command.endswith('\r'):

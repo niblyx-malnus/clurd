@@ -14,22 +14,35 @@ import os
 # Add current directory to path so we can import urbit_dojo
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from urbit_dojo import quick_run
+from urbit_dojo import quick_run, quick_run_batched
 
 
 def main():
-    if len(sys.argv) < 2 or len(sys.argv) > 3:
-        print("Usage: ./dojo \"<command>\" [timeout]")
+    if len(sys.argv) < 2 or len(sys.argv) > 4:
+        print("Usage: ./dojo \"<command>\" [timeout] [--slow]")
         print("Examples:")
         print("  ./dojo \"(add 5 4)\"")
         print("  ./dojo \"now\"")
         print("  ./dojo \"+hello 'world'\"")
         print("  ./dojo \"|commit %spv-test\" 60")
+        print("  ./dojo \"(add 5 4)\" --slow     # Use char-by-char sending for debugging")
+        print("  ./dojo \"now\" 5 --slow         # Char-by-char with custom timeout")
         sys.exit(1)
     
+    # Parse arguments
     command = sys.argv[1]
-    timeout = float(sys.argv[2]) if len(sys.argv) == 3 else None
-    result = quick_run(command, timeout)
+    use_slow = '--slow' in sys.argv
+    
+    # Remove --slow from args to parse timeout
+    args_without_slow = [arg for arg in sys.argv[1:] if arg != '--slow']
+    timeout = float(args_without_slow[1]) if len(args_without_slow) > 1 else None
+    
+    # Choose implementation (batched is now default)
+    if use_slow:
+        result = quick_run(command, timeout)
+    else:
+        result = quick_run_batched(command, timeout)
+    
     print(result)
 
 

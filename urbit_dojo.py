@@ -768,6 +768,155 @@ class UrbitDojo:
         requests.post(f"{self.ship_url}/~/channel/{self.channel_id}", 
                      json=char_data, cookies=self.cookies)
     
+    def _send_belt(self, belt: Dict, id_num: int):
+        """Send a belt (keyboard input) to the dojo"""
+        belt_data = [{
+            "id": id_num,
+            "action": "poke",
+            "ship": self.ship_name,
+            "app": "herm",
+            "mark": "herm-task",
+            "json": {
+                "session": self.session_name,
+                "belt": belt
+            }
+        }]
+        requests.post(f"{self.ship_url}/~/channel/{self.channel_id}", 
+                     json=belt_data, cookies=self.cookies)
+    
+    def _create_belts_from_string(self, text: str) -> List[Dict]:
+        """
+        Convert string to belts using webterm's batching approach.
+        
+        Mimics webterm's readInput function to batch consecutive printable 
+        characters into single belts, dramatically reducing HTTP requests.
+        """
+        belts = []
+        strap = ""
+        
+        for char in text:
+            c = ord(char)
+            
+            # Accumulate printable characters (same logic as webterm)
+            if c >= 32 and c != 127:
+                strap += char
+            else:
+                # Flush accumulated text as single belt
+                if strap:
+                    belts.append({"txt": list(strap)})
+                    strap = ""
+                
+                # Handle special characters individually
+                if c == 0:
+                    # Bell - skip (webterm writes \x07 to terminal)
+                    pass
+                elif c == 8 or c == 127:  # Backspace
+                    belts.append({"bac": None})
+                elif c == 13:  # Enter/return
+                    belts.append({"ret": None})
+                elif c == 9:  # Tab -> Ctrl+I
+                    belts.append({"mod": {"mod": "ctl", "key": "i"}})
+                elif 1 <= c <= 26:  # Other control characters
+                    key_char = chr(96 + c)
+                    if key_char != 'd':  # Prevent remote shutdowns
+                        belts.append({"mod": {"mod": "ctl", "key": key_char}})
+                # Skip other non-printable characters
+        
+        # Flush any remaining accumulated text
+        if strap:
+            belts.append({"txt": list(strap)})
+        
+        return belts
+    
+    def send_command_batched(self, command: str, listen_duration: float = DEFAULT_LISTEN_DURATION) -> StreamCapture:
+        """
+        Send command using webterm's batching approach for improved performance.
+        
+        This dramatically reduces HTTP requests by batching consecutive printable 
+        characters into single belts, just like webterm does for pasted text.
+        
+        Example: "(add 5 4)" becomes just 2 HTTP requests instead of 9:
+        1. { txt: ['(','a','d','d',' ','5',' ','4',')'] }
+        2. { ret: None }
+        
+        Args:
+            command: Command string to send
+            listen_duration: How long to listen for response
+            
+        Returns:
+            StreamCapture with terminal events and timing
+        """
+        if not self.cookies or not self.channel_id:
+            return StreamCapture(list(command), [], [], listen_duration, 0)
+        
+        # Create belts using webterm's batching logic
+        belts = self._create_belts_from_string(command)
+        
+        # Start event capture
+        events = []
+        stop_event = threading.Event()
+        
+        def capture_events():
+            try:
+                response = requests.get(
+                    f"{self.ship_url}/~/channel/{self.channel_id}",
+                    cookies=self.cookies,
+                    stream=True,
+                    timeout=listen_duration + 10
+                )
+                
+                for line in response.iter_lines():
+                    if stop_event.is_set():
+                        break
+                    if line and line.decode('utf-8').startswith('data: '):
+                        try:
+                            data = json.loads(line.decode('utf-8')[6:])
+                            events.append(data)
+                        except:
+                            pass
+            except Exception:
+                pass
+        
+        # Start terminal event capture
+        thread = threading.Thread(target=capture_events, daemon=True)
+        thread.start()
+        time.sleep(DEFAULT_STREAM_START_DELAY)
+        
+        # Record sequence start time for slog correlation
+        sequence_start_time = time.time()
+        belts_sent = 0
+        
+        try:
+            # Send belts (much fewer HTTP requests than character-by-character)
+            id_counter = 300
+            for belt in belts:
+                self._send_belt(belt, id_counter)
+                belts_sent += 1
+                id_counter += 1
+                time.sleep(0.02)  # Shorter delay between belts than between chars
+            
+            # Listen for response
+            time.sleep(listen_duration)
+            
+        except Exception:
+            pass
+        finally:
+            stop_event.set()
+        
+        # Collect correlated slog messages
+        sequence_end_time = time.time()
+        correlated_slog_messages = self._get_correlated_slog_messages(
+            sequence_start_time, sequence_end_time
+        )
+        
+        return StreamCapture(
+            input_sequence=list(command),
+            terminal_events=events,
+            slog_messages=correlated_slog_messages,
+            listen_duration=listen_duration,
+            chars_sent=len(command)  # Report original command length for compatibility
+        )
+    
     def _send_enter(self, id_num: int):
         """Send Enter to execute the command"""
         enter_data = [{
@@ -969,3 +1118,50 @@ def quick_run(command: str, timeout: float = None) -> str:
             all_output = slog_output
     
     return all_output if result.chars_sent == len(chars) else f"Error: Only sent {result.chars_sent}/{len(chars)} chars"
+
+
+def quick_run_batched(command: str, timeout: float = None) -> str:
+    """
+    Quick function to run a single command using batched sending for improved performance.
+    
+    Uses webterm's batching approach to dramatically reduce HTTP requests.
+    
+    Usage:
+        result = quick_run_batched("(add 5 4)")    # Much faster than quick_run
+        result = quick_run_batched("now")          # Single HTTP request + enter
+    """
+    config = load_config()
+    
+    if not all([config['ship_name'], config['access_code']]):
+        return "Error: Missing ship configuration. Create config.json or set environment variables."
+    
+    dojo = UrbitDojo(config['ship_url'], config['ship_name'], config['access_code'])
+    
+    if not dojo.connect():
+        return "Error: Could not connect to Urbit ship"
+    
+    # Clear the dojo first - use batched approach for this too
+    clear_command = '\x05\x15'  # Ctrl+E then Ctrl+U
+    dojo.send_command_batched(clear_command, 0.5)
+    
+    # Add enter if not present
+    if not command.endswith('\r'):
+        command += '\r'
+    
+    # Use batched sending for main command
+    listen_timeout = timeout if timeout is not None else DEFAULT_LISTEN_DURATION
+    result = dojo.send_command_batched(command, listen_timeout)
+    
+    # Extract text from captured events
+    terminal_output = dojo._extract_output(result.terminal_events)
+    
+    # Add slog messages
+    all_output = terminal_output
+    if result.slog_messages:
+        slog_output = '\n'.join([f"[SLOG] {msg}" for msg in result.slog_messages])
+        if all_output:
+            all_output = f"{all_output}\n{slog_output}"
+        else:
+            all_output = slog_output
+    
+    return all_output

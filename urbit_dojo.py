@@ -414,10 +414,6 @@ class UrbitDojo:
         chars_sent = 0
         
         try:
-            # Clear current line first
-            # self._send_clear_line()  # DISABLED: Causes command truncation at ~15 chars
-            # time.sleep(0.2)
-            
             # Send each character in the sequence
             id_counter = 100
             for i, char in enumerate(chars):
@@ -505,10 +501,6 @@ class UrbitDojo:
         thread = threading.Thread(target=capture_events, daemon=True)
         thread.start()
         time.sleep(DEFAULT_STREAM_START_DELAY)
-        
-        # Clear current line first
-        # self._send_clear_line()  # DISABLED: Causes command truncation at ~15 chars
-        # time.sleep(DEFAULT_CLEAR_LINE_DELAY)
         
         # Send characters one by one until bell
         chars_accepted = 0
@@ -948,6 +940,10 @@ def quick_run(command: str, timeout: float = None) -> str:
     
     if not dojo.connect():
         return "Error: Could not connect to Urbit ship"
+    
+    # Clear the dojo first with Ctrl+U
+    clear_chars = ['\x15']  # Ctrl+U to clear current line
+    clear_result = dojo.send_and_listen(clear_chars, 0.5)
     
     # Parse command string for escape sequences
     chars = parse_command_string(command)

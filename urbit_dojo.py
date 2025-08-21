@@ -941,8 +941,8 @@ def quick_run(command: str, timeout: float = None) -> str:
     if not dojo.connect():
         return "Error: Could not connect to Urbit ship"
     
-    # Clear the dojo first with Ctrl+U
-    clear_chars = ['\x15']  # Ctrl+U to clear current line
+    # Clear the dojo first with Ctrl+E then Ctrl+U  
+    clear_chars = ['\x05', '\x15']  # Ctrl+E (end of line) then Ctrl+U (clear line)
     clear_result = dojo.send_and_listen(clear_chars, 0.5)
     
     # Parse command string for escape sequences

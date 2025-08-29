@@ -1081,6 +1081,8 @@ def parse_command_string(cmd_str: str) -> List[str]:
                 chars.append('\r')
             elif next_char == '\\':
                 chars.append('\\')
+            elif next_char == '!':
+                chars.append('!')
             else:
                 # Unknown escape sequence, keep both characters
                 chars.append('\\')
@@ -1169,6 +1171,9 @@ def quick_run_batched(command: str, timeout: float = None) -> str:
     if not dojo._is_at_clean_prompt():
         clear_command = '\x05\x15'  # Ctrl+E then Ctrl+U
         dojo.send_command_batched(clear_command, 0.5)
+    
+    # Parse command string for escape sequences
+    command = ''.join(parse_command_string(command))
     
     # Add enter if not present
     if not command.endswith('\r'):

@@ -303,7 +303,7 @@ class UrbitDojo:
                 allow_redirects=False
             )
             
-            if auth_response.status_code != 204:
+            if auth_response.status_code not in [200, 204]:
                 return False
                 
             self.cookies = auth_response.cookies.get_dict()

@@ -24,7 +24,7 @@ def main():
         print("  ./dojo \"(add 5 4)\"")
         print("  ./dojo \"now\"")
         print("  ./dojo \"+hello 'world'\"")
-        print("  ./dojo \"|commit %spv-test\" 60")
+        print("  ./dojo \"|commit %spv-test\" 10")
         print("  ./dojo \"(add 5 4)\" --slow     # Use char-by-char sending for debugging")
         print("  ./dojo \"now\" 5 --slow         # Char-by-char with custom timeout")
         sys.exit(1)

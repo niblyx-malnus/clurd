@@ -173,9 +173,11 @@ class TerminalBuffer:
         self.cursor_y = 0
     
     def scroll_up(self):
-        """Scroll screen up by one line"""
-        # Remove top line, add empty line at bottom
-        self.screen = self.screen[1:] + [' ' * self.width]
+        """Expand screen buffer instead of scrolling to preserve all content"""
+        # Add empty line at bottom instead of removing top line
+        self.screen.append(' ' * self.width)
+        # Increase height to accommodate new content
+        self.height += 1
     
     def get_visible_text(self) -> str:
         """Return all visible text as a string with line breaks"""

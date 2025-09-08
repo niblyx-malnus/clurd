@@ -18,30 +18,33 @@ from urbit_dojo import quick_run, quick_run_batched
 
 
 def main():
-    if len(sys.argv) < 2 or len(sys.argv) > 4:
-        print("Usage: ./dojo \"<command>\" [timeout] [--slow]")
+    if len(sys.argv) < 2 or len(sys.argv) > 5:
+        print("Usage: ./dojo \"<command>\" [timeout] [--slow] [--no-enter]")
         print("Examples:")
         print("  ./dojo \"(add 5 4)\"")
         print("  ./dojo \"now\"")
         print("  ./dojo \"+hello 'world'\"")
         print("  ./dojo \"|commit %spv-test\" 10")
-        print("  ./dojo \"(add 5 4)\" --slow     # Use char-by-char sending for debugging")
-        print("  ./dojo \"now\" 5 --slow         # Char-by-char with custom timeout")
+        print("  ./dojo \"(add 5 4)\" --slow        # Use char-by-char sending for debugging")
+        print("  ./dojo \"now\" 5 --slow            # Char-by-char with custom timeout")
+        print("  ./dojo \"\\\\up\" --no-enter         # Navigate history without executing")
+        print("  ./dojo \"\\\\up\\\\up\" --no-enter     # Navigate multiple steps without executing")
         sys.exit(1)
     
     # Parse arguments
     command = sys.argv[1]
     use_slow = '--slow' in sys.argv
+    no_enter = '--no-enter' in sys.argv
     
-    # Remove --slow from args to parse timeout
-    args_without_slow = [arg for arg in sys.argv[1:] if arg != '--slow']
-    timeout = float(args_without_slow[1]) if len(args_without_slow) > 1 else None
+    # Remove flags from args to parse timeout
+    args_without_flags = [arg for arg in sys.argv[1:] if arg not in ['--slow', '--no-enter']]
+    timeout = float(args_without_flags[1]) if len(args_without_flags) > 1 else None
     
     # Choose implementation (batched is now default)
     if use_slow:
-        result = quick_run(command, timeout)
+        result = quick_run(command, timeout, no_enter)
     else:
-        result = quick_run_batched(command, timeout)
+        result = quick_run_batched(command, timeout, no_enter)
     
     print(result)
 

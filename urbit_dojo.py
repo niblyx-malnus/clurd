@@ -52,7 +52,7 @@ from typing import Dict, List, Optional
 
 
 # Configuration Constants
-DEFAULT_TERMINAL_WIDTH = 80
+DEFAULT_TERMINAL_WIDTH = 100000  # TODO: Remove width-based truncation entirely
 DEFAULT_TERMINAL_HEIGHT = 24
 DEFAULT_LISTEN_DURATION = 0.5
 DEFAULT_CHAR_TIMEOUT = 0.5
@@ -734,27 +734,37 @@ class UrbitDojo:
     
     def _send_character(self, char: str, id_num: int):
         """Send a single character to the dojo with proper Belt encoding"""
-        # Get ASCII code of character
-        c = ord(char)
-        
-        # Handle special characters according to webterm's readInput logic
-        if c == 9:  # Tab -> Ctrl+I
-            belt = {"mod": {"mod": "ctl", "key": "i"}}
-        elif c == 13:  # Enter/newline -> ret
-            belt = {"ret": None}
-        elif c == 8 or c == 127:  # Backspace
-            belt = {"bac": None}
-        elif 1 <= c <= 26:  # Other control characters
-            key_char = chr(96 + c)  # Convert to corresponding letter
-            if key_char != 'd':  # Prevent remote shutdowns
-                belt = {"mod": {"mod": "ctl", "key": key_char}}
-            else:
-                return  # Skip Ctrl+D
-        elif 32 <= c <= 126:  # Regular printable characters
-            belt = {"txt": [char]}
+        # Handle arrow keys
+        if char == 'ARROW_UP':
+            belt = {"aro": "u"}
+        elif char == 'ARROW_DOWN':
+            belt = {"aro": "d"}
+        elif char == 'ARROW_LEFT':
+            belt = {"aro": "l"}
+        elif char == 'ARROW_RIGHT':
+            belt = {"aro": "r"}
         else:
-            # Skip other characters (non-printable, etc.)
-            return
+            # Get ASCII code of character
+            c = ord(char)
+            
+            # Handle special characters according to webterm's readInput logic
+            if c == 9:  # Tab -> Ctrl+I
+                belt = {"mod": {"mod": "ctl", "key": "i"}}
+            elif c == 13:  # Enter/newline -> ret
+                belt = {"ret": None}
+            elif c == 8 or c == 127:  # Backspace
+                belt = {"bac": None}
+            elif 1 <= c <= 26:  # Other control characters
+                key_char = chr(96 + c)  # Convert to corresponding letter
+                if key_char != 'd':  # Prevent remote shutdowns
+                    belt = {"mod": {"mod": "ctl", "key": key_char}}
+                else:
+                    return  # Skip Ctrl+D
+            elif 32 <= c <= 126:  # Regular printable characters
+                belt = {"txt": [char]}
+            else:
+                # Skip other characters (non-printable, etc.)
+                return
         
         char_data = [{
             "id": id_num,
@@ -829,6 +839,70 @@ class UrbitDojo:
             belts.append({"txt": list(strap)})
         
         return belts
+
+    def _create_belts_from_chars(self, chars: List[str]) -> List[Dict]:
+        """
+        Convert parsed character list to belts, handling special arrow keys.
+        
+        This handles both regular characters (for batching) and special
+        arrow key strings like 'ARROW_UP'.
+        """
+        belts = []
+        strap = ""
+        
+        for char in chars:
+            # Handle arrow keys first
+            if char == 'ARROW_UP':
+                # Flush any accumulated text first
+                if strap:
+                    belts.append({"txt": list(strap)})
+                    strap = ""
+                belts.append({"aro": "u"})
+            elif char == 'ARROW_DOWN':
+                if strap:
+                    belts.append({"txt": list(strap)})
+                    strap = ""
+                belts.append({"aro": "d"})
+            elif char == 'ARROW_LEFT':
+                if strap:
+                    belts.append({"txt": list(strap)})
+                    strap = ""
+                belts.append({"aro": "l"})
+            elif char == 'ARROW_RIGHT':
+                if strap:
+                    belts.append({"txt": list(strap)})
+                    strap = ""
+                belts.append({"aro": "r"})
+            else:
+                # Handle regular characters (same logic as _create_belts_from_string)
+                c = ord(char)
+                
+                # Accumulate printable characters
+                if c >= 32 and c != 127:
+                    strap += char
+                else:
+                    # Flush accumulated text as single belt
+                    if strap:
+                        belts.append({"txt": list(strap)})
+                        strap = ""
+                    
+                    # Handle special characters individually
+                    if c == 8 or c == 127:  # Backspace
+                        belts.append({"bac": None})
+                    elif c == 13:  # Enter/return
+                        belts.append({"ret": None})
+                    elif c == 9:  # Tab -> Ctrl+I
+                        belts.append({"mod": {"mod": "ctl", "key": "i"}})
+                    elif 1 <= c <= 26:  # Other control characters
+                        key_char = chr(96 + c)
+                        if key_char != 'd':  # Prevent remote shutdowns
+                            belts.append({"mod": {"mod": "ctl", "key": key_char}})
+        
+        # Flush any remaining accumulated text
+        if strap:
+            belts.append({"txt": list(strap)})
+        
+        return belts
     
     def _is_at_clean_prompt(self) -> bool:
         """Check if we're currently at a clean dojo prompt"""
@@ -854,6 +928,90 @@ class UrbitDojo:
                        not has_command_chars)  # No command chars in ship name
             return is_clean
         return False
+    
+    def send_chars_batched(self, chars: List[str], listen_duration: float = DEFAULT_LISTEN_DURATION) -> StreamCapture:
+        """
+        Send parsed character list using webterm's batching approach with arrow key support.
+        
+        This version handles both regular characters and special arrow key strings.
+        
+        Args:
+            chars: List of characters including special strings like 'ARROW_UP'
+            listen_duration: How long to listen for response
+            
+        Returns:
+            StreamCapture with terminal events and timing
+        """
+        if not self.cookies or not self.channel_id:
+            return StreamCapture(chars, [], [], listen_duration, 0)
+        
+        # Create belts using our enhanced logic that handles arrow keys
+        belts = self._create_belts_from_chars(chars)
+        
+        # Start event capture
+        events = []
+        stop_event = threading.Event()
+        
+        def capture_events():
+            try:
+                response = requests.get(
+                    f"{self.ship_url}/~/channel/{self.channel_id}",
+                    cookies=self.cookies,
+                    stream=True,
+                    timeout=listen_duration + 10
+                )
+                
+                for line in response.iter_lines():
+                    if stop_event.is_set():
+                        break
+                    if line and line.decode('utf-8').startswith('data: '):
+                        try:
+                            data = json.loads(line.decode('utf-8')[6:])
+                            events.append(data)
+                        except:
+                            pass
+            except Exception:
+                pass
+        
+        # Start terminal event capture
+        thread = threading.Thread(target=capture_events, daemon=True)
+        thread.start()
+        time.sleep(DEFAULT_STREAM_START_DELAY)
+        
+        # Record sequence start time for slog correlation
+        sequence_start_time = time.time()
+        belts_sent = 0
+        
+        try:
+            # Send belts (much fewer HTTP requests than character-by-character)
+            id_counter = 300
+            for belt in belts:
+                self._send_belt(belt, id_counter)
+                belts_sent += 1
+                id_counter += 1
+                time.sleep(0.02)  # Shorter delay between belts than between chars
+            
+            # Listen for response
+            time.sleep(listen_duration)
+            
+        except Exception:
+            pass
+        finally:
+            stop_event.set()
+        
+        # Collect correlated slog messages
+        sequence_end_time = time.time()
+        correlated_slog_messages = self._get_correlated_slog_messages(
+            sequence_start_time, sequence_end_time
+        )
+        
+        return StreamCapture(
+            input_sequence=chars,
+            terminal_events=events,
+            slog_messages=correlated_slog_messages,
+            listen_duration=listen_duration,
+            chars_sent=len(chars)  # Report original command length for compatibility
+        )
     
     def send_command_batched(self, command: str, listen_duration: float = DEFAULT_LISTEN_DURATION) -> StreamCapture:
         """
@@ -1039,6 +1197,63 @@ class UrbitDojo:
         # Ignore other blit types: sag, sav, url (file operations, links)
 
 
+def get_command(steps_back: int, timeout: float = None) -> str:
+    """
+    Navigate to a specific position in dojo history with a clean reset.
+    
+    This function:
+    1. Clears the current prompt
+    2. Hits Enter to reset history cursor position
+    3. Goes up the specified number of steps
+    4. Leaves the command ready (no final Enter)
+    
+    Args:
+        steps_back: Number of commands to go back in history
+        timeout: How long to wait for response
+        
+    Returns:
+        The terminal output showing the historical command
+    """
+    config = load_config()
+    
+    if not all([config['ship_name'], config['access_code']]):
+        return "Error: Missing ship configuration. Create config.json or set environment variables."
+    
+    dojo = UrbitDojo(config['ship_url'], config['ship_name'], config['access_code'])
+    
+    if not dojo.connect():
+        return "Error: Could not connect to Urbit ship"
+    
+    # Step 1: Clear current prompt and reset history position
+    clear_and_reset_chars = ['\x15', '\r']  # Ctrl+U (clear line) then Enter (reset history cursor)
+    clear_result = dojo.send_and_listen(clear_and_reset_chars, 0.5)
+    
+    # Step 2: Navigate up the specified number of steps
+    if steps_back > 0:
+        navigation_chars = ['ARROW_UP'] * steps_back  # Go up N times
+        
+        # Use batched sending for the navigation
+        listen_timeout = timeout if timeout is not None else DEFAULT_LISTEN_DURATION
+        result = dojo.send_chars_batched(navigation_chars, listen_timeout)
+        
+        # Extract terminal output
+        terminal_output = dojo._extract_output(result.terminal_events)
+        
+        # Add slog messages
+        all_output = terminal_output
+        if result.slog_messages:
+            slog_output = '\n'.join([f"[SLOG] {msg}" for msg in result.slog_messages])
+            if all_output:
+                all_output = f"{all_output}\n{slog_output}"
+            else:
+                all_output = slog_output
+        
+        return all_output
+    else:
+        # If steps_back is 0 or negative, just return the cleared prompt
+        return dojo._extract_output(clear_result.terminal_events)
+
+
 def load_config():
     """Load configuration from config.json or environment variables"""
     # Try to load from config.json
@@ -1071,7 +1286,25 @@ def parse_command_string(cmd_str: str) -> List[str]:
     i = 0
     while i < len(cmd_str):
         if cmd_str[i] == '\\' and i + 1 < len(cmd_str):
-            # Handle escape sequences
+            # Check for arrow key sequences
+            if cmd_str[i:i+3] == '\\up':
+                chars.append('ARROW_UP')
+                i += 3
+                continue
+            elif cmd_str[i:i+5] == '\\down':
+                chars.append('ARROW_DOWN')
+                i += 5
+                continue
+            elif cmd_str[i:i+5] == '\\left':
+                chars.append('ARROW_LEFT')
+                i += 5
+                continue
+            elif cmd_str[i:i+6] == '\\right':
+                chars.append('ARROW_RIGHT')
+                i += 6
+                continue
+            
+            # Handle regular escape sequences
             next_char = cmd_str[i + 1]
             if next_char == 't':
                 chars.append('\t')
@@ -1098,7 +1331,7 @@ def parse_command_string(cmd_str: str) -> List[str]:
     return chars
 
 
-def quick_run(command: str, timeout: float = None) -> str:
+def quick_run(command: str, timeout: float = None, no_enter: bool = False) -> str:
     """
     Quick function to run a single command
     
@@ -1126,8 +1359,8 @@ def quick_run(command: str, timeout: float = None) -> str:
     # Parse command string for escape sequences
     chars = parse_command_string(command)
     
-    # Only add enter if the command doesn't already end with carriage return
-    if not chars or chars[-1] != '\r':
+    # Only add enter if the command doesn't already end with carriage return and no_enter is False
+    if not no_enter and (not chars or chars[-1] != '\r'):
         chars.append('\r')
     
     # Use send_and_listen for complete character stream processing  
@@ -1149,7 +1382,7 @@ def quick_run(command: str, timeout: float = None) -> str:
     return all_output if result.chars_sent == len(chars) else f"Error: Only sent {result.chars_sent}/{len(chars)} chars"
 
 
-def quick_run_batched(command: str, timeout: float = None) -> str:
+def quick_run_batched(command: str, timeout: float = None, no_enter: bool = False) -> str:
     """
     Quick function to run a single command using batched sending for improved performance.
     
@@ -1175,15 +1408,15 @@ def quick_run_batched(command: str, timeout: float = None) -> str:
         dojo.send_command_batched(clear_command, 0.5)
     
     # Parse command string for escape sequences
-    command = ''.join(parse_command_string(command))
+    chars = parse_command_string(command)
     
-    # Add enter if not present
-    if not command.endswith('\r'):
-        command += '\r'
+    # Add enter if not present and no_enter is False
+    if not no_enter and (not chars or chars[-1] != '\r'):
+        chars.append('\r')
     
-    # Use batched sending for main command
+    # Use enhanced batched sending for main command
     listen_timeout = timeout if timeout is not None else DEFAULT_LISTEN_DURATION
-    result = dojo.send_command_batched(command, listen_timeout)
+    result = dojo.send_chars_batched(chars, listen_timeout)
     
     # Extract text from captured events
     terminal_output = dojo._extract_output(result.terminal_events)

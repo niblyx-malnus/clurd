@@ -1,0 +1,45 @@
+#!/usr/bin/env python3
+"""
+get - Get a command from dojo history
+
+Usage:
+    ./get <steps_back> [timeout]
+    
+Examples:
+    ./get 1          # Get the last command
+    ./get 5          # Get the command 5 steps back  
+    ./get 10 3       # Get command 10 steps back with 3 second timeout
+"""
+
+import sys
+import os
+
+# Add current directory to path so we can import urbit_dojo
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from urbit_dojo import get_command
+
+
+def main():
+    if len(sys.argv) < 2 or len(sys.argv) > 3:
+        print("Usage: ./get <steps_back> [timeout]")
+        print("Examples:")
+        print("  ./get 1          # Get the last command")
+        print("  ./get 5          # Get the command 5 steps back")
+        print("  ./get 10 3       # Get command 10 steps back with 3 second timeout")
+        sys.exit(1)
+    
+    try:
+        steps_back = int(sys.argv[1])
+    except ValueError:
+        print("Error: steps_back must be a number")
+        sys.exit(1)
+    
+    timeout = float(sys.argv[2]) if len(sys.argv) > 2 else None
+    
+    result = get_command(steps_back, timeout)
+    print(result)
+
+
+if __name__ == "__main__":
+    main()

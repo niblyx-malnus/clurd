@@ -156,6 +156,11 @@ command = get_command(5)                      # Get command 5 steps back
 - `requests` library  
 - Running Urbit ship with web interface
 
+## Documentation for Claude
+
+- **[quick_reference.md](quick_reference.md)** - Comprehensive Urbit dojo command reference for Claude: desk notation, path substitution, navigation, and discovery
+- **[FOO.md](FOO.md)** - Frequently Observed Oversights: Common mistakes Claude makes when working with Urbit (learning document)
+
 ## Philosophy
 
 clurd provides a minimal, powerful toolkit for systematic exploration of Urbit's computational paradigm through real-time interaction and feedback analysis.

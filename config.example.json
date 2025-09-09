@@ -1,5 +1,14 @@
 {
   "ship_url": "http://localhost:80",
   "ship_name": "your-ship-name",
-  "access_code": "your-access-code"
+  "access_code": "your-access-code",
+  "resources": {
+    "docs": "/path/to/local/docs.urbit.org/",
+    "urbit": "/path/to/local/urbit/",
+    "vere": "/path/to/local/vere/",
+    "resident-urbit-expert": "your user and interlocutor; ask!"
+  },
+  "references": {
+    "placeholder": "add links to useful reference documents"
+  }
 }

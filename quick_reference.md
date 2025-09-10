@@ -142,6 +142,35 @@ Asynchronous operations and complex computations:
 - `-build-cast %desk %from %to` - Build type conversion
 - `-new-app %app-name` - Generate new app scaffold
 
+### Variable Assignment and Library Access
+Store thread/generator output in variables for computation and access library functions:
+
+- `=var -thread args` - Store thread output in variable for computation
+- `=var +generator args` - Store generator output in variable  
+- `=lib -build-file /=desk=/lib/mylib/hoon` - Build library and assign to variable
+- After assignment, access with `function-name:var` or compute on stored results
+
+**Examples:**
+```hoon
+# Store thread output and work with results
+=result -eval '(add 1 2)'
+(mul result 10)
+
+# Store generator output (note: +ls outputs rendering, not data)
+=result +hello 'world'  
+=code +code
+
+# Build and use library functions  
+=mylib -build-file /=mydesk=/lib/helpers/hoon
+(helper-function:mylib arg1 arg2)
+```
+
+**Key Benefits:**
+- Run complex computations and store results for further processing
+- Access library functions from any desk without importing
+- Chain operations by storing intermediate results
+- Build interactive computational workflows in the dojo
+
 ### Network Operations
 - `-hi ~ship` - Async greeting/connection *(may not be working)*
 - `-eth-watcher` - Monitor Ethereum events

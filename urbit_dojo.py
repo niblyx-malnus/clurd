@@ -287,6 +287,32 @@ class UrbitDojo:
         self.slog_thread = threading.Thread(target=capture_slog, daemon=True)
         self.slog_thread.start()
     
+    def _send_terminal_resize(self, width: int, height: int):
+        """Send terminal dimensions to Urbit via blew task"""
+        try:
+            resize_data = [{
+                "id": 2,
+                "action": "poke",
+                "ship": self.ship_name,
+                "app": "herm",
+                "mark": "herm-task",
+                "json": {
+                    "session": self.session_name,
+                    "blew": {
+                        "w": width,
+                        "h": height
+                    }
+                }
+            }]
+            
+            requests.post(
+                f"{self.ship_url}/~/channel/{self.channel_id}",
+                json=resize_data,
+                cookies=self.cookies
+            )
+        except Exception:
+            pass  # Non-critical if resize fails
+    
     def _stop_slog_capture(self):
         """Stop the persistent slog capture"""
         if self.slog_thread and self.slog_thread.is_alive():
@@ -337,6 +363,9 @@ class UrbitDojo:
             )
             
             if sub_response.status_code == 204:
+                # Send terminal dimensions to Urbit
+                self._send_terminal_resize(DEFAULT_TERMINAL_WIDTH, DEFAULT_TERMINAL_HEIGHT)
+                
                 # Start persistent slog capture after successful connection
                 self._start_persistent_slog_capture()
                 # Give slog connection time to establish

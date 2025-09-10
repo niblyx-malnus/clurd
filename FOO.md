@@ -24,6 +24,13 @@ A collection of common mistakes Claude makes when working with Urbit, to help av
 ++  gate
 ```
 
+## Import Patterns
+
+### ❌ Using wildcard imports (*) 
+**Mistake**: Importing with `/-  *bitcoin` or multiple wildcards like `/-  *bitcoin, *wallet`
+**Reality**: Wildcard imports pollute the namespace and cause confusion about where names come from
+**Correct**: Use explicit aliases like `/-  btc=bitcoin` or even single letters `/-  b=bitcoin`
+
 ## Environment Assumptions
 
 ### ❌ Assuming specific ship configurations

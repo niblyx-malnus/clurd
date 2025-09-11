@@ -26,14 +26,14 @@ The three tools you need for 80% of Urbit dojo interaction:
 - **Threads/async operations**: Consider wait time for completion
 - **Network/HTTP requests**: Varies by operation
 
-### 2. `./run.sh get` - Explore Command History  
+### 2. `./run.sh nth_last_command` - Get Nth Last Command  
 ```bash
-./run.sh get 1           # Get the most recent command (clean reset)
-./run.sh get 5           # Get command 5 steps back
-./run.sh get 20          # Deep history exploration
+./run.sh nth_last_command 1           # Get the most recent command (clean reset)
+./run.sh nth_last_command 5           # Get 5th last command
+./run.sh nth_last_command 20          # Get 20th last command
 ```
 
-**Or direct:** `./get 1` (after manual setup)
+**Or direct:** `./nth_last_command 1` (after manual setup)
 
 **Key advantage:** Each call resets history cursor position for predictable navigation.
 
@@ -62,7 +62,7 @@ The three tools you need for 80% of Urbit dojo interaction:
 3. **Start exploring:**
    ```bash
    ./dojo "\\t" --no-enter             # See what's available
-   ./get 10                           # Check recent history
+   ./nth_last_command 10                           # Check recent history
    ./dojo "(add 1 2)"                 # Try a command
    ```
 
@@ -84,8 +84,8 @@ The three tools you need for 80% of Urbit dojo interaction:
 
 ### History Exploration
 ```bash
-./get 1           # Latest command with clean cursor reset
-./get 50          # Deep dive into command history
+./nth_last_command 1           # Latest command with clean cursor reset
+./nth_last_command 50          # Deep dive into command history
 ```
 
 ## Configuration
@@ -119,7 +119,7 @@ command = get_command(5)                      # Get command 5 steps back
 ## Key Features
 
 - **Full arrow key support** - History navigation and cursor movement
-- **Predictable history navigation** - Clean cursor reset with `./get`
+- **Predictable history navigation** - Clean cursor reset with `./nth_last_command`
 - **Interactive tab completion** - Discover and learn Urbit functions
 - **Smart timeout handling** - Appropriate timeouts for different operations
 - **Terminal simulation** - Faithful reproduction of dojo behavior

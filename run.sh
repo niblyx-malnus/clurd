@@ -29,7 +29,7 @@ if [ $# -eq 0 ]; then
     echo "Usage: ./run.sh <command> [args...]"
     echo "Examples:"
     echo "  ./run.sh dojo '(add 5 4)'"
-    echo "  ./run.sh get 10"
+    echo "  ./run.sh nth_last_command 10"
     echo "  ./run.sh dojo '+code'          # Get your access code"
     echo "  ./run.sh dojo '\\t' --no-enter   # Tab completion"
 else

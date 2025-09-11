@@ -1,0 +1,45 @@
+#!/usr/bin/env python3
+"""
+nth_last_command - Get the nth last command from dojo history
+
+Usage:
+    ./nth_last_command <n> [timeout]
+    
+Examples:
+    ./nth_last_command 1          # Get the last command
+    ./nth_last_command 5          # Get the 5th last command
+    ./nth_last_command 10 3       # Get 10th last command with 3 second timeout
+"""
+
+import sys
+import os
+
+# Add current directory to path so we can import urbit_dojo
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from urbit_dojo import get_command
+
+
+def main():
+    if len(sys.argv) < 2 or len(sys.argv) > 3:
+        print("Usage: ./nth_last_command <n> [timeout]")
+        print("Examples:")
+        print("  ./nth_last_command 1          # Get the last command")
+        print("  ./nth_last_command 5          # Get the 5th last command")
+        print("  ./nth_last_command 10 3       # Get 10th last command with 3 second timeout")
+        sys.exit(1)
+    
+    try:
+        steps_back = int(sys.argv[1])
+    except ValueError:
+        print("Error: n must be a number")
+        sys.exit(1)
+    
+    timeout = float(sys.argv[2]) if len(sys.argv) > 2 else None
+    
+    result = get_command(steps_back, timeout)
+    print(result)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,6 @@
+|%
++$  state  @ud
++$  action
+  $%  [%increment ~]
+  ==
+--

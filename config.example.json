@@ -1,6 +1,6 @@
 {
   "ship_url": "http://localhost:80",
-  "ship_name": "your-ship-name",
+  "ship_name": "zod",
   "access_code": "your-access-code",
   "resources": {
     "docs": "/path/to/local/docs.urbit.org/",

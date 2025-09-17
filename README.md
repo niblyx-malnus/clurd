@@ -15,10 +15,6 @@ The three tools you need for 80% of Urbit dojo interaction:
 ./run.sh dojo "hello\\left\\leftworld"       # Arrow key cursor movement
 ```
 
-**Or direct usage** (after manual setup):
-```bash
-./dojo "(add 5 4)"                    # Requires local Python setup
-```
 
 **Recommended timeouts by operation type:**
 - **Most operations**: Default (0.5s) - try immediately first
@@ -33,7 +29,6 @@ The three tools you need for 80% of Urbit dojo interaction:
 ./run.sh nth_last_command 20          # Get 20th last command
 ```
 
-**Or direct:** `./nth_last_command 1` (after manual setup)
 
 **Key advantage:** Each call resets history cursor position for predictable navigation.
 
@@ -56,36 +51,36 @@ The three tools you need for 80% of Urbit dojo interaction:
 
 2. **Get your access code:**
    ```bash
-   ./dojo "+code"  # Copy the result like "ridlur-figbud-capmut-bidrup"
+   ./run.sh dojo "+code"  # Copy the result like "ridlur-figbud-capmut-bidrup"
    ```
 
 3. **Start exploring:**
    ```bash
-   ./dojo "\\t" --no-enter             # See what's available
-   ./nth_last_command 10                           # Check recent history
-   ./dojo "(add 1 2)"                 # Try a command
+   ./run.sh dojo "\\t" --no-enter      # See what's available
+   ./run.sh nth_last_command 10        # Check recent history
+   ./run.sh dojo "(add 1 2)"           # Try a command
    ```
 
 ## Advanced Usage
 
 ### Command Execution Modes
 ```bash
-./dojo "command"                      # Default (batched, fast)
-./dojo "command" --slow               # Character-by-character (debugging)
-./dojo "command" --no-enter           # Navigate/edit without executing
+./run.sh dojo "command"               # Default (batched, fast)
+./run.sh dojo "command" --slow        # Character-by-character (debugging)
+./run.sh dojo "command" --no-enter    # Navigate/edit without executing
 ```
 
 ### Arrow Key Navigation
 ```bash
-./dojo "\\up\\up" --no-enter          # Go back 2 commands in history
-./dojo "\\down" --no-enter            # Go forward in history  
-./dojo "word\\left\\leftnew" --no-enter  # Edit: "newword"
+./run.sh dojo "\\up\\up" --no-enter    # Go back 2 commands in history
+./run.sh dojo "\\down" --no-enter      # Go forward in history
+./run.sh dojo "word\\left\\leftnew" --no-enter  # Edit: "newword"
 ```
 
 ### History Exploration
 ```bash
-./nth_last_command 1           # Latest command with clean cursor reset
-./nth_last_command 50          # Deep dive into command history
+./run.sh nth_last_command 1    # Latest command with clean cursor reset
+./run.sh nth_last_command 50   # Deep dive into command history
 ```
 
 ## Configuration
@@ -94,10 +89,12 @@ Create `config.json`:
 ```json
 {
   "ship_url": "http://localhost:80",
-  "ship_name": "your-ship-name", 
+  "ship_name": "zod",
   "access_code": "your-access-code"
 }
 ```
+
+**Important:** Ship name should omit the `~` sig. Use `"zod"` not `"~zod"`.
 
 **Getting your access code:**
 1. In your ship's dojo: `+code`
@@ -131,7 +128,7 @@ command = get_command(5)                      # Get command 5 steps back
 
 **⚠️ Common Misconception:**
 ```bash
-./dojo "|commit %base" 10
+./run.sh dojo "|commit %base" 10
 > |commit %base
 >=
 ~zod:dojo>

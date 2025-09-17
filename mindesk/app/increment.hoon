@@ -1,4 +1,5 @@
 /-  *increment
+/+  default-agent, dbug
 |%
 +$  versioned-state
   $%  state-0
@@ -6,11 +7,13 @@
 +$  state-0  [%0 value=@ud]
 +$  card  card:agent:gall
 --
+%-  agent:dbug
 =|  state-0
 =*  state  -
 ^-  agent:gall
 |_  =bowl:gall
 +*  this  .
+    def   ~(. (default-agent this %|) bowl)
 ++  on-init
   ^-  (quip card _this)
   ~&  >  "increment: starting with value 0"
@@ -35,11 +38,11 @@
       [~ this(value +(value))]
     ==
   ==
-++  on-watch  |=(path !!)
-++  on-leave  |=(path [~ this])
-++  on-agent  |=([wire sign:agent:gall] !!)
-++  on-arvo   |=([wire sign-arvo] !!)
-++  on-fail   |=([term tang] [~ this])
+++  on-watch  on-watch:def
+++  on-leave  on-leave:def
+++  on-agent  on-agent:def
+++  on-arvo   on-arvo:def
+++  on-fail   on-fail:def
 ++  on-peek
   |=  =path
   ^-  (unit (unit cage))

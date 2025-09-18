@@ -153,6 +153,11 @@ command = get_command(5)                      # Get command 5 steps back
 - `requests` library  
 - Running Urbit ship with web interface
 
+## Desk Templates
+
+- **[mindesk.md](mindesk.md)** - Minimal desk creation with working Gall agent (12 files)
+- **[teddesk.md](teddesk.md)** - Minimal desk for thread-driven development with agent coordination examples (17 files)
+
 ## Documentation for Claude
 
 - **[quick_reference.md](quick_reference.md)** - Comprehensive Urbit dojo command reference for Claude: desk notation, path substitution, navigation, and discovery

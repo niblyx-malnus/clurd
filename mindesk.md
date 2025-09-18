@@ -25,14 +25,14 @@ Create a working Urbit desk in 5 commands using the mindesk template.
    cp -r mindesk/* /path/to/your/ship/yourdesk/
    ```
 
-4. **Commit the desk:**
-   ```bash
-   ./run.sh dojo "|commit %yourdesk" 10
-   ```
-
-5. **Install and start:**
+4. **Install the desk:**
    ```bash
    ./run.sh dojo "|install our %yourdesk"
+   ```
+
+5. **Commit and start:**
+   ```bash
+   ./run.sh dojo "|commit %yourdesk" 10
    ```
 
 ## Test the Agent

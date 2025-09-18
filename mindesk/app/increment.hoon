@@ -7,6 +7,7 @@
 +$  state-0  [%0 value=@ud]
 +$  card  card:agent:gall
 --
+::
 %-  agent:dbug
 =|  state-0
 =*  state  -
@@ -14,17 +15,32 @@
 |_  =bowl:gall
 +*  this  .
     def   ~(. (default-agent this %|) bowl)
+::
 ++  on-init
   ^-  (quip card _this)
   ~&  >  "increment: starting with value 0"
   [~ this(value 0)]
+::
 ++  on-save
   ^-  vase
   !>(state)
+::
 ++  on-load
   |=  old-state=vase
   ^-  (quip card _this)
+  =+  !<(old=versioned-state old-state)
+  ?>  ?=(%0 -.old)
+  =.  state  old
   [~ this]
+::
+++  on-peek
+  |=  =path
+  ^-  (unit (unit cage))
+  ?+  path  ~
+    [%x %value ~]
+    ``noun+!>(value)
+  ==
+::
 ++  on-poke
   |=  [=mark =vase]
   ^-  (quip card _this)
@@ -38,16 +54,10 @@
       [~ this(value +(value))]
     ==
   ==
+::
 ++  on-watch  on-watch:def
 ++  on-leave  on-leave:def
 ++  on-agent  on-agent:def
 ++  on-arvo   on-arvo:def
 ++  on-fail   on-fail:def
-++  on-peek
-  |=  =path
-  ^-  (unit (unit cage))
-  ?+  path  ~
-    [%x %value ~]
-    ``noun+!>(value)
-  ==
 --

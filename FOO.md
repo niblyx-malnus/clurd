@@ -50,6 +50,7 @@ A collection of common mistakes Claude makes when working with Urbit, to help av
 **Mistake**: Giving paths without considering current `=dir` location
 
 **Reality**: Current directory affects relative path behavior
+
 **Correct**: Use absolute paths with substitution or explicitly reset with `=dir`
 
 ---

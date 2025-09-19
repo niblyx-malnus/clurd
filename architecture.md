@@ -553,20 +553,6 @@ validation = dojo.validate_command("(add 5 )")
 4. **Reliability**: Character-by-character input matches Urbit's expectations
 5. **Simplicity**: Single-file implementation with minimal dependencies
 
-## Future Considerations
-
-### Potential Improvements
-- WebSocket support for lower latency
-- Persistent connections for long-running sessions
-- Multi-command transactions
-- Parallel command execution
-
-### Known Limitations
-- Single-threaded stream processing
-- No built-in retry logic for network failures
-- Terminal size assumptions (100000 width hack)
-- Character delays needed for tab completion
-
 ## Summary
 
 `urbit_dojo.py` solves the impedance mismatch between Urbit's human-centric terminal interface and the need for programmatic control. By faithfully simulating a terminal and speaking Urbit's blit protocol, it enables reliable automation while preserving the exact behavior developers expect from manual interaction.

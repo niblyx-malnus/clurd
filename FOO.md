@@ -35,6 +35,8 @@ A collection of common mistakes Claude makes when working with Urbit, to help av
 
 **Correct**: Use explicit aliases like `/-  btc=bitcoin` or even single letters `/-  b=bitcoin`
 
+**Note**: In exceptional cases where there only a small number of imports, wildcard imports can be acceptable.
+
 ## Environment Assumptions
 
 ### ❌ Assuming specific ship configurations

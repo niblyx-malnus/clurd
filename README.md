@@ -6,7 +6,7 @@ A Python client for interacting with Urbit's dojo terminal, designed for Claude'
 
 The three tools you need for 80% of Urbit dojo interaction:
 
-### 1. `./run.sh dojo` - Execute Commands (Recommended)
+### 1. `./run.sh dojo` - Execute Commands
 ```bash
 ./run.sh dojo "(add 5 4)"                    # Execute and get result: 9
 ./run.sh dojo "now"                          # Current Urbit time  

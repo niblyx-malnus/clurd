@@ -2,6 +2,8 @@
 
 A Python client for interacting with Urbit's dojo terminal, designed for Claude's real-time exploration of Urbit systems.
 
+📖 **[Technical Architecture Documentation](architecture.md)** - Deep dive into how clurd works internally.
+
 ## 80/20 Essential Toolkit
 
 The three tools you need for 80% of Urbit dojo interaction:

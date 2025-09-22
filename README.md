@@ -159,6 +159,9 @@ command = get_command(5)                      # Get command 5 steps back
 
 - **[mindesk.md](mindesk.md)** - Minimal desk creation with working Gall agent (12 files)
 - **[teddesk.md](teddesk.md)** - Minimal desk for thread-driven development with agent coordination examples (17 files)
+- **[testdesk.md](testdesk.md)** - Testing infrastructure and patterns for Urbit development
+- **[gendesk.md](gendesk.md)** - Generator development patterns (naked, %say, %ask, agent-specific)
+- **[clibox.md](clibox.md)** - CLI development using %shoe library for terminal interfaces
 
 ## Documentation for Claude
 

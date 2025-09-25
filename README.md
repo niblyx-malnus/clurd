@@ -6,7 +6,7 @@ A Python client for interacting with Urbit's dojo terminal, designed for Claude'
 
 ## 80/20 Essential Toolkit
 
-The three tools you need for 80% of Urbit dojo interaction:
+The four tools you need for 80% of Urbit interaction:
 
 ### 1. `./run.sh dojo` - Execute Commands
 ```bash
@@ -42,6 +42,16 @@ The three tools you need for 80% of Urbit dojo interaction:
 ```
 
 **Perfect for:** Learning Hoon standard library, discovering system functions, getting function signatures.
+
+### 4. `./run.sh http` - Authenticated HTTP Requests
+```bash
+./run.sh http GET /sailbox                   # GET request to sailbox app
+./run.sh http GET "/sailbox?foo=bar"         # GET with query parameters
+./run.sh http POST /sailbox/command '{"ship": "~zod"}'  # POST JSON data
+./run.sh http POST /sailbox "ship=~zod" --content-type "application/x-www-form-urlencoded"
+```
+
+**Perfect for:** Testing web interfaces like sailbox, debugging form submissions, automating UI interactions without browser.
 
 ## Quick Start
 
@@ -105,14 +115,18 @@ Create `config.json`:
 ## Python Library
 
 ```python
-from urbit_dojo import quick_run, quick_run_batched, get_command
+from urbit_dojo import quick_run, quick_run_batched, get_command, make_http_request
 
 # Execute commands
 result = quick_run("(add 5 4)")               # "9"
 result = quick_run_batched("now", timeout=5)  # Fast batched execution
 
-# History exploration  
+# History exploration
 command = get_command(5)                      # Get command 5 steps back
+
+# Authenticated HTTP requests
+html = make_http_request("GET", "/sailbox")
+json_response = make_http_request("POST", "/sailbox/api", '{"data": "value"}')
 ```
 
 ## Key Features

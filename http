@@ -1,0 +1,22 @@
+#!/usr/bin/env python3
+"""
+HTTP client for authenticated Urbit requests
+"""
+import sys
+import argparse
+from urbit_dojo import make_http_request
+
+def main():
+    parser = argparse.ArgumentParser(description='Make authenticated HTTP requests to Urbit ship')
+    parser.add_argument('method', help='HTTP method (GET, POST, PUT, DELETE)')
+    parser.add_argument('path', help='URL path (e.g., /sailbox or /sailbox?foo=bar)')
+    parser.add_argument('data', nargs='?', default=None, help='Request body for POST/PUT (JSON or form data)')
+    parser.add_argument('--content-type', help='Content-Type header (auto-detects JSON)')
+
+    args = parser.parse_args()
+
+    result = make_http_request(args.method, args.path, args.data, args.content_type)
+    print(result)
+
+if __name__ == '__main__':
+    main()

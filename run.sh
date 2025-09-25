@@ -32,6 +32,8 @@ if [ $# -eq 0 ]; then
     echo "  ./run.sh nth_last_command 10"
     echo "  ./run.sh dojo '+code'          # Get your access code"
     echo "  ./run.sh dojo '\\t' --no-enter   # Tab completion"
+    echo "  ./run.sh http GET /sailbox     # Authenticated HTTP requests"
+    echo "  ./run.sh http POST /sailbox/command '{\"ship\": \"~zod\"}'"
 else
     ./"$@"
 fi

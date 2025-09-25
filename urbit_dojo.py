@@ -1414,42 +1414,42 @@ def quick_run(command: str, timeout: float = None, no_enter: bool = False) -> st
 def quick_run_batched(command: str, timeout: float = None, no_enter: bool = False) -> str:
     """
     Quick function to run a single command using batched sending for improved performance.
-    
+
     Uses webterm's batching approach to dramatically reduce HTTP requests.
-    
+
     Usage:
         result = quick_run_batched("(add 5 4)")    # Much faster than quick_run
         result = quick_run_batched("now")          # Single HTTP request + enter
     """
     config = load_config()
-    
+
     if not all([config['ship_name'], config['access_code']]):
         return "Error: Missing ship configuration. Create config.json or set environment variables."
-    
+
     dojo = UrbitDojo(config['ship_url'], config['ship_name'], config['access_code'])
-    
+
     if not dojo.connect():
         return "Error: Could not connect to Urbit ship"
-    
+
     # Only clear if we're not at a clean prompt to avoid unnecessary bell
     if not dojo._is_at_clean_prompt():
         clear_command = '\x05\x15'  # Ctrl+E then Ctrl+U
         dojo.send_command_batched(clear_command, 0.5)
-    
+
     # Parse command string for escape sequences
     chars = parse_command_string(command)
-    
+
     # Add enter if not present and no_enter is False
     if not no_enter and (not chars or chars[-1] != '\r'):
         chars.append('\r')
-    
+
     # Use enhanced batched sending for main command
     listen_timeout = timeout if timeout is not None else DEFAULT_LISTEN_DURATION
     result = dojo.send_chars_batched(chars, listen_timeout)
-    
+
     # Extract text from captured events
     terminal_output = dojo._extract_output(result.terminal_events)
-    
+
     # Add slog messages
     all_output = terminal_output
     if result.slog_messages:
@@ -1458,5 +1458,77 @@ def quick_run_batched(command: str, timeout: float = None, no_enter: bool = Fals
             all_output = f"{all_output}\n{slog_output}"
         else:
             all_output = slog_output
-    
+
     return all_output
+
+
+def make_http_request(method: str, path: str, data: str = None, content_type: str = None) -> str:
+    """
+    Make an authenticated HTTP request to the Urbit ship.
+
+    Uses the same authentication as dojo commands, allowing easy testing of
+    web interfaces like sailbox without manual browser interaction.
+
+    Args:
+        method: HTTP method (GET, POST, PUT, DELETE, etc.)
+        path: URL path (e.g., "/sailbox" or "/sailbox?foo=bar")
+        data: Request body for POST/PUT requests (optional)
+        content_type: Content-Type header (defaults to application/json for JSON data)
+
+    Returns:
+        Response body as string (HTML, JSON, etc.)
+
+    Usage:
+        # GET request
+        result = make_http_request("GET", "/sailbox")
+
+        # GET with query parameters
+        result = make_http_request("GET", "/sailbox?ship=~zod&action=view")
+
+        # POST JSON data
+        result = make_http_request("POST", "/sailbox/command", '{"ship": "~zod"}')
+
+        # POST form data
+        result = make_http_request("POST", "/sailbox", "ship=~zod", "application/x-www-form-urlencoded")
+    """
+    config = load_config()
+
+    if not all([config['ship_name'], config['access_code']]):
+        return "Error: Missing ship configuration. Create config.json or set environment variables."
+
+    # Create a dojo instance just for authentication
+    dojo = UrbitDojo(config['ship_url'], config['ship_name'], config['access_code'])
+
+    # Connect to get authenticated cookies
+    if not dojo.connect():
+        return "Error: Could not connect to Urbit ship for authentication"
+
+    # Build full URL
+    url = f"{config['ship_url']}{path}"
+
+    # Prepare headers
+    headers = {}
+    if content_type:
+        headers['Content-Type'] = content_type
+    elif data and data.strip().startswith('{'):
+        # Auto-detect JSON
+        headers['Content-Type'] = 'application/json'
+
+    try:
+        # Make the request with authenticated cookies
+        if method.upper() == 'GET':
+            response = requests.get(url, cookies=dojo.cookies, headers=headers, timeout=10)
+        elif method.upper() == 'POST':
+            response = requests.post(url, cookies=dojo.cookies, headers=headers, data=data, timeout=10)
+        elif method.upper() == 'PUT':
+            response = requests.put(url, cookies=dojo.cookies, headers=headers, data=data, timeout=10)
+        elif method.upper() == 'DELETE':
+            response = requests.delete(url, cookies=dojo.cookies, headers=headers, timeout=10)
+        else:
+            return f"Error: Unsupported HTTP method: {method}"
+
+        # Return response text (could be HTML, JSON, etc.)
+        return response.text
+
+    except requests.RequestException as e:
+        return f"Error: HTTP request failed: {str(e)}"

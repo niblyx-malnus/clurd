@@ -44,11 +44,15 @@ import json
 import os
 import queue
 import re
-import requests
+import warnings
 import threading
 import time
 from dataclasses import dataclass
 from typing import Dict, List, Optional
+
+# Suppress urllib3 OpenSSL warnings BEFORE importing requests
+warnings.filterwarnings('ignore', message='urllib3 v2 only supports OpenSSL')
+import requests
 
 
 # Configuration Constants

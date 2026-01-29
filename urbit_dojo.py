@@ -1134,7 +1134,71 @@ class UrbitDojo:
             listen_duration=listen_duration,
             chars_sent=len(command)  # Report original command length for compatibility
         )
-    
+
+    def listen_only(self, listen_duration: float = DEFAULT_LISTEN_DURATION) -> StreamCapture:
+        """
+        Listen for terminal output without sending any commands.
+
+        Useful for checking if a previously-started computation has finished,
+        or for monitoring output from a long-running process.
+
+        Args:
+            listen_duration: How long to listen for events
+
+        Returns:
+            StreamCapture with terminal events captured during the window
+        """
+        if not self.cookies or not self.channel_id:
+            return StreamCapture([], [], [], listen_duration, 0)
+
+        events = []
+        stop_event = threading.Event()
+
+        def capture_events():
+            try:
+                response = requests.get(
+                    f"{self.ship_url}/~/channel/{self.channel_id}",
+                    cookies=self.cookies,
+                    stream=True,
+                    timeout=listen_duration + 10
+                )
+
+                for line in response.iter_lines():
+                    if stop_event.is_set():
+                        break
+                    if line and line.decode('utf-8').startswith('data: '):
+                        try:
+                            data = json.loads(line.decode('utf-8')[6:])
+                            events.append(data)
+                        except:
+                            pass
+            except Exception:
+                pass
+
+        thread = threading.Thread(target=capture_events, daemon=True)
+        thread.start()
+        time.sleep(DEFAULT_STREAM_START_DELAY)
+
+        sequence_start_time = time.time()
+
+        # Just listen, don't send anything
+        time.sleep(listen_duration)
+
+        stop_event.set()
+
+        sequence_end_time = time.time()
+        correlated_slog_messages = self._get_correlated_slog_messages(
+            sequence_start_time, sequence_end_time
+        )
+
+        return StreamCapture(
+            input_sequence=[],
+            terminal_events=events,
+            slog_messages=correlated_slog_messages,
+            listen_duration=listen_duration,
+            chars_sent=0
+        )
+
     def _send_enter(self, id_num: int):
         """Send Enter to execute the command"""
         enter_data = [{
@@ -1535,6 +1599,44 @@ def send_interrupt() -> str:
         return f"Error: Process {pid} not found"
     except PermissionError:
         return f"Error: Permission denied to signal process {pid}"
+
+
+def listen(timeout: float = 5.0) -> str:
+    """
+    Listen for terminal output without sending any commands.
+
+    Useful for checking if a previously-started computation has finished,
+    or for monitoring output from a long-running process.
+
+    Usage:
+        result = listen(10)  # listen for 10 seconds
+
+    CLI:
+        ./dojo --listen 10
+    """
+    config = load_config()
+
+    if not all([config['ship_name'], config['access_code']]):
+        return "Error: Missing ship configuration."
+
+    dojo = UrbitDojo(config['ship_url'], config['ship_name'], config['access_code'])
+
+    if not dojo.connect():
+        return "Error: Could not connect to Urbit ship"
+
+    result = dojo.listen_only(timeout)
+
+    terminal_output = dojo._extract_output(result.terminal_events)
+
+    all_output = terminal_output
+    if result.slog_messages:
+        slog_output = '\n'.join([f"[SLOG] {msg}" for msg in result.slog_messages])
+        if all_output:
+            all_output = f"{all_output}\n{slog_output}"
+        else:
+            all_output = slog_output
+
+    return all_output if all_output else "(no output)"
 
 
 def make_http_request(method: str, path: str, data: str = None, content_type: str = None) -> str:

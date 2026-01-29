@@ -14,7 +14,7 @@ import os
 # Add current directory to path so we can import urbit_dojo
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 
-from urbit_dojo import quick_run, quick_run_batched, send_interrupt
+from urbit_dojo import quick_run, quick_run_batched, send_interrupt, listen
 
 
 def main():
@@ -23,9 +23,18 @@ def main():
         result = send_interrupt()
         print(result)
         return
+
+    # Handle --listen flag
+    if len(sys.argv) >= 2 and sys.argv[1] == '--listen':
+        timeout = float(sys.argv[2]) if len(sys.argv) > 2 else 5.0
+        result = listen(timeout)
+        print(result)
+        return
+
     if len(sys.argv) < 2 or len(sys.argv) > 5:
         print("Usage: ./dojo \"<command>\" [timeout] [--slow] [--no-enter]")
         print("       ./dojo --interrupt")
+        print("       ./dojo --listen [timeout]")
         print("Examples:")
         print("  ./dojo \"(add 5 4)\"")
         print("  ./dojo \"now\"")
@@ -36,6 +45,7 @@ def main():
         print("  ./dojo \"\\\\up\" --no-enter         # Navigate history without executing")
         print("  ./dojo \"\\\\up\\\\up\" --no-enter     # Navigate multiple steps without executing")
         print("  ./dojo --interrupt               # Send Ctrl+C to cancel running computation")
+        print("  ./dojo --listen 10               # Listen for output for 10 seconds")
         sys.exit(1)
     
     # Parse arguments

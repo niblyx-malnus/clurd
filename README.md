@@ -16,6 +16,7 @@ The four tools you need for 80% of Urbit interaction:
 ./run.sh dojo "\\up" --no-enter              # Navigate history without executing
 ./run.sh dojo "hello\\left\\leftworld"       # Arrow key cursor movement
 ./run.sh dojo --interrupt                    # Send Ctrl+C to cancel running computation
+./run.sh dojo --listen 10                    # Listen for output for 10 seconds without sending
 ```
 
 
@@ -155,6 +156,18 @@ This sends a real Unix signal to the vere serf process, same as pressing Ctrl+C 
 - A computation is spinning forever
 - You accidentally ran an infinite loop like `|-($)`
 - A command is taking unexpectedly long
+
+### Monitoring Long-Running Computations
+
+For slow but finite computations, use `--listen` to check for output:
+```bash
+./run.sh dojo "(slow-computation)" 1   # Start with short timeout
+./run.sh dojo --listen 5               # Check if done yet
+./run.sh dojo --listen 5               # Still going? Listen more
+./run.sh dojo --interrupt              # Give up, cancel it
+```
+
+Note: `--listen` connects to the ship and waits for output. If the ship is completely stuck (infinite loop), you'll see the echoed command but no result - use `--interrupt` in that case.
 
 ### `|commit` Output Interpretation
 

@@ -1544,6 +1544,12 @@ def find_urbit_pid():
 
     config = load_config()
     parsed = urlparse(config['ship_url'])
+
+    # Only allow interrupt for local ships
+    host = parsed.hostname or 'localhost'
+    if host not in ('localhost', '127.0.0.1', '::1'):
+        raise ValueError(f"--interrupt only works for local ships (got {host})")
+
     port = parsed.port or (443 if parsed.scheme == 'https' else 80)
 
     # Find king PID (listens on the HTTP port)
@@ -1587,7 +1593,10 @@ def send_interrupt() -> str:
     import os
     import signal
 
-    pid = find_urbit_pid()
+    try:
+        pid = find_urbit_pid()
+    except ValueError as e:
+        return f"Error: {e}"
 
     if pid is None:
         return "Error: Could not find urbit process. Is the ship running?"

@@ -11,10 +11,11 @@ The four tools you need for 80% of Urbit interaction:
 ### 1. `./run.sh dojo` - Execute Commands
 ```bash
 ./run.sh dojo "(add 5 4)"                    # Execute and get result: 9
-./run.sh dojo "now"                          # Current Urbit time  
+./run.sh dojo "now"                          # Current Urbit time
 ./run.sh dojo "|commit %base" 10             # Commit operation with 10s timeout
 ./run.sh dojo "\\up" --no-enter              # Navigate history without executing
 ./run.sh dojo "hello\\left\\leftworld"       # Arrow key cursor movement
+./run.sh dojo --interrupt                    # Send Ctrl+C to cancel running computation
 ```
 
 
@@ -115,7 +116,7 @@ Create `config.json`:
 ## Python Library
 
 ```python
-from urbit_dojo import quick_run, quick_run_batched, get_command, make_http_request
+from urbit_dojo import quick_run, quick_run_batched, get_command, make_http_request, send_interrupt
 
 # Execute commands
 result = quick_run("(add 5 4)")               # "9"
@@ -127,6 +128,9 @@ command = get_command(5)                      # Get command 5 steps back
 # Authenticated HTTP requests
 html = make_http_request("GET", "/sailbox")
 json_response = make_http_request("POST", "/sailbox/api", '{"data": "value"}')
+
+# Interrupt a stuck computation
+send_interrupt()                              # Send SIGINT to serf process
 ```
 
 ## Key Features
@@ -139,6 +143,18 @@ json_response = make_http_request("POST", "/sailbox/api", '{"data": "value"}')
 - **SLOG capture** - System log messages included in output
 
 ## Important Notes
+
+### Interrupting Stuck Computations
+
+If a command is taking too long or stuck in an infinite loop:
+```bash
+./run.sh dojo --interrupt    # Send SIGINT to cancel the computation
+```
+
+This sends a real Unix signal to the vere serf process, same as pressing Ctrl+C in the terminal. Use this when:
+- A computation is spinning forever
+- You accidentally ran an infinite loop like `|-($)`
+- A command is taking unexpectedly long
 
 ### `|commit` Output Interpretation
 

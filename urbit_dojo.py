@@ -1466,6 +1466,77 @@ def quick_run_batched(command: str, timeout: float = None, no_enter: bool = Fals
     return all_output
 
 
+def find_urbit_pid():
+    """
+    Find the urbit serf process PID.
+
+    The king process listens on the HTTP port, but the serf (child of king)
+    is the one that runs computations and needs to be interrupted.
+
+    Returns the serf PID if found, None otherwise.
+    """
+    import subprocess
+    from urllib.parse import urlparse
+
+    config = load_config()
+    parsed = urlparse(config['ship_url'])
+    port = parsed.port or (443 if parsed.scheme == 'https' else 80)
+
+    # Find king PID (listens on the HTTP port)
+    result = subprocess.run(
+        ['lsof', '-ti', f':{port}', '-sTCP:LISTEN'],
+        capture_output=True, text=True
+    )
+
+    if not result.stdout.strip():
+        return None
+
+    king_pid = int(result.stdout.strip().split()[0])
+
+    # Find serf PID (child of king)
+    result = subprocess.run(
+        ['pgrep', '-P', str(king_pid)],
+        capture_output=True, text=True
+    )
+
+    if result.stdout.strip():
+        return int(result.stdout.strip().split()[0])
+
+    # No child found, maybe single-process mode? Return king
+    return king_pid
+
+
+def send_interrupt() -> str:
+    """
+    Send SIGINT to the urbit process to interrupt a running computation.
+
+    This sends a real Unix signal to the vere process, same as pressing
+    Ctrl+C in the terminal. Works even when the ship is stuck in an
+    infinite loop.
+
+    Usage:
+        result = send_interrupt()  # cancels whatever's running on the ship
+
+    CLI:
+        ./dojo --interrupt
+    """
+    import os
+    import signal
+
+    pid = find_urbit_pid()
+
+    if pid is None:
+        return "Error: Could not find urbit process. Is the ship running?"
+
+    try:
+        os.kill(pid, signal.SIGINT)
+        return f"Sent SIGINT to urbit (PID {pid})"
+    except ProcessLookupError:
+        return f"Error: Process {pid} not found"
+    except PermissionError:
+        return f"Error: Permission denied to signal process {pid}"
+
+
 def make_http_request(method: str, path: str, data: str = None, content_type: str = None) -> str:
     """
     Make an authenticated HTTP request to the Urbit ship.
